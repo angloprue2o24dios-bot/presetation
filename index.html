@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>La célula · Un recorrido por dentro</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Newsreader:opsz,wght@6..72,400;6..72,500&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#000;--ink:#F2ECFA;--soft:#A99BC8;--c:#A98BE8;--head:"Bricolage Grotesque","Trebuchet MS",system-ui,sans-serif;--body:"Newsreader",Georgia,"Times New Roman",serif}
+*{box-sizing:border-box;margin:0}
+html{background:var(--bg)}
+body{color:var(--ink);font-family:var(--body)}
+.track{position:relative;height:1180vh}
+.stage{position:sticky;top:0;height:100vh;height:100svh;overflow:hidden;background:radial-gradient(circle at 66% 50%,#1b1033 0,#0a0612 55%,#000 100%)}
+#svg{position:absolute;inset:0;width:100%;height:100%}
+.scrim{position:absolute;inset:0;pointer-events:none;background:linear-gradient(90deg,rgba(0,0,0,.96) 0,rgba(0,0,0,.88) 26%,rgba(0,0,0,0) 46%)}
+.copy{position:absolute;left:6vw;top:50%;transform:translateY(-50%);width:min(30rem,34vw);padding-left:1.4rem;border-left:5px solid var(--c);transition:border-color .3s}
+.copy h2{font:700 clamp(2rem,3.9vw,3.4rem)/1.05 var(--head);letter-spacing:-.02em}
+.copy.intro h2{font-size:clamp(3.2rem,7.2vw,6.4rem);letter-spacing:-.035em}
+.copy p{font-size:clamp(1.1rem,1.5vw,1.4rem);line-height:1.55;margin-top:1rem;max-width:34ch}
+.copy .fact{font:500 .95rem/1.4 var(--head);color:var(--soft);margin-top:1.2rem}
+.brand{position:absolute;left:6vw;top:2rem;font:500 .95rem var(--head);color:var(--soft)}
+nav{position:absolute;right:2.2vw;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:.9rem}
+nav button{width:14px;height:14px;border-radius:50%;border:2px solid var(--k);background:transparent;cursor:pointer;padding:0;transition:background .2s,transform .2s}
+nav button.on{background:var(--k);transform:scale(1.35)}
+nav button:focus-visible{outline:3px solid var(--ink);outline-offset:3px}
+.bar{position:absolute;left:0;top:0;height:4px;width:0;background:var(--c)}
+.part{transition:opacity .2s,filter .3s;transform-box:fill-box;transform-origin:center;animation:bob 7s ease-in-out infinite alternate}
+@media (max-aspect-ratio:1/1){
+ .scrim{background:linear-gradient(0deg,rgba(0,0,0,.97) 0,rgba(0,0,0,.9) 36%,rgba(0,0,0,0) 58%)}
+ .copy{left:6vw;right:12vw;top:auto;bottom:5vh;transform:none;width:auto;padding-left:1rem}
+ .copy p{max-width:none;margin-top:.6rem}
+ .copy.intro h2{font-size:clamp(2.6rem,14vw,4.5rem)}
+ .brand{top:1.2rem}
+}
+
+.stage::after{content:"";position:absolute;inset:0;pointer-events:none;z-index:1;background:radial-gradient(ellipse at center,transparent 50%,rgba(0,0,0,.75) 100%)}
+.copy,nav,.brand{z-index:2}.bar{z-index:3}
+.dust{position:absolute;top:100%;border-radius:50%;background:#fff;opacity:.22;pointer-events:none;animation:drift linear infinite}
+.w{display:inline-block}
+.copy.enter .w{animation:up .8s cubic-bezier(.2,.8,.2,1) both;animation-delay:calc(var(--i)*70ms)}
+.copy.enter p{animation:up .9s .3s cubic-bezier(.2,.8,.2,1) both}
+.copy.enter .fact{animation:up .9s .5s cubic-bezier(.2,.8,.2,1) both}
+.copy.intro .fact::after{content:"";display:inline-block;width:.55em;height:.55em;margin-left:.8rem;border-right:2px solid;border-bottom:2px solid;transform:rotate(45deg);animation:nudge 1.4s ease-in-out infinite}
+.mem{animation-name:breathe;animation-duration:5s}
+.flow{animation:flow 1.6s linear infinite}.flow2{animation:flow2 2s linear infinite}
+.spin{animation:dash 16s linear infinite}
+.beat{animation:beat 1.6s ease-in-out infinite alternate}
+.vs circle,.tw circle{transform-box:fill-box;transform-origin:center;animation:bob2 3.2s ease-in-out infinite alternate}
+.vs circle:nth-child(2){animation-delay:-1s}.vs circle:nth-child(3){animation-delay:-2s}.vs circle:nth-child(4){animation-delay:-.5s}
+.tw circle{animation-name:tw;animation-duration:2.6s}.tw circle:nth-child(odd){animation-delay:-1.3s}.tw circle:nth-child(3n){animation-delay:-.6s}
+@keyframes bob{from{transform:translate(0,-5px) rotate(-.6deg)}to{transform:translate(0,5px) rotate(.6deg)}}
+@keyframes breathe{from{transform:scale(.994)}to{transform:scale(1.008)}}
+@keyframes bob2{from{transform:translate(-3px,-4px)}to{transform:translate(3px,4px)}}
+@keyframes tw{from{opacity:.2}to{opacity:1}}
+@keyframes flow{to{stroke-dashoffset:-17}}
+@keyframes flow2{to{stroke-dashoffset:-15}}
+@keyframes dash{to{stroke-dashoffset:-270}}
+@keyframes beat{from{opacity:.5}to{opacity:1}}
+@keyframes up{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:none}}
+@keyframes nudge{50%{transform:translateY(7px) rotate(45deg)}}
+@keyframes drift{to{transform:translate3d(var(--dx),-115vh,0)}}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important}}
+
+.mode{position:absolute;right:2.2vw;top:1.4rem;z-index:4;width:44px;height:44px;display:grid;place-items:center;padding:0;color:var(--ink);background:transparent;border:1px solid var(--soft);border-radius:50%;cursor:pointer;transition:background .2s,color .2s,transform .3s}.mode:hover{transform:rotate(60deg) scale(1.08)}
+.mode:hover{background:var(--ink);color:var(--bg)}
+.mode:focus-visible{outline:3px solid var(--c);outline-offset:3px}
+html.light{--bg:#fff;--ink:#2A1B4A;--soft:#5E4F80}
+html.light .stage{background:#fff}
+html.light .scrim{background:linear-gradient(90deg,rgba(255,255,255,.96) 0,rgba(255,255,255,.88) 26%,rgba(255,255,255,0) 46%)}
+html.light .stage::after,html.light .dust{display:none}
+html.light .part,html.light .flow,html.light .flow2,html.light .spin,html.light .beat,html.light .vs circle,html.light .tw circle{animation:none}
+@media (max-aspect-ratio:1/1){html.light .scrim{background:linear-gradient(0deg,rgba(255,255,255,.97) 0,rgba(255,255,255,.9) 36%,rgba(255,255,255,0) 58%)}}
+
+.iabtn{right:calc(2.2vw + 56px);font:700 .95rem var(--head);letter-spacing:.02em}
+.iabtn:hover{transform:scale(1.1)}
+html.ia .iabtn{background:var(--ink);color:var(--bg);animation:glowp 1.8s ease-in-out infinite}
+html.ia .copy .fact{color:var(--ink);font-size:1.05rem}
+html.ia .part{animation-duration:4s}
+.stage::before{content:"";display:none;position:absolute;left:0;right:0;top:-160px;height:160px;pointer-events:none;z-index:1;background:linear-gradient(180deg,transparent,rgba(130,200,255,.08),transparent);animation:scan 5s linear infinite}
+html.ia .stage::before{display:block}
+@keyframes scan{to{transform:translateY(calc(100vh + 160px))}}
+@keyframes glowp{50%{box-shadow:0 0 0 8px rgba(169,139,232,.25),0 0 18px #A98BE8}}
+
+footer{background:var(--bg);color:var(--ink);padding:14vh 6vw 10vh;border-top:1px solid rgba(128,128,160,.3)}
+footer h2{font:700 clamp(2rem,4vw,3.4rem)/1.05 var(--head);letter-spacing:-.02em;margin-bottom:3rem}
+footer dl{display:grid;grid-template-columns:repeat(auto-fit,minmax(15rem,1fr));gap:2.6rem 3rem;max-width:64rem}
+footer dt{font:500 .98rem/1.4 var(--head);color:var(--soft)}
+footer dd{font:700 clamp(1.5rem,2.4vw,2rem)/1.2 var(--head);margin:.4rem 0 0}
+footer dd.cl{display:flex;align-items:center;gap:.7rem}
+.cr{opacity:0;transform:translateY(18px);transition:opacity .7s,transform .7s;transition-delay:calc(var(--i)*100ms)}
+.cr.in{opacity:1;transform:none}
+@media (prefers-reduced-motion:reduce){.cr{opacity:1;transform:none;transition:none}}
+
+nav{gap:1rem}
+nav button{position:relative}
+nav button::after{content:"";position:absolute;inset:-10px}
+.brand{font-size:.9rem}
+@media (max-aspect-ratio:1/1){
+ .copy{bottom:calc(3svh + env(safe-area-inset-bottom,0px))}
+ .copy h2{font-size:clamp(1.55rem,7vw,2.2rem)}
+ .copy.intro h2{font-size:clamp(2.6rem,13vw,4.2rem)}
+ .copy p{font-size:1rem;line-height:1.45}
+ .copy .fact,html.ia .copy .fact{font-size:.85rem;margin-top:.8rem}
+ .brand{top:1.5rem}
+}
+@media (max-height:520px) and (min-aspect-ratio:101/100){
+ .copy{width:min(24rem,40vw)}
+ .copy h2{font-size:1.5rem}.copy.intro h2{font-size:2.6rem}
+ .copy p{font-size:.95rem;line-height:1.4;margin-top:.5rem}
+ .copy .fact,html.ia .copy .fact{font-size:.8rem;margin-top:.6rem}
+ .brand{top:1rem}.mode{top:.8rem}
+}
+@media (max-width:900px) and (min-aspect-ratio:101/100) and (min-height:521px){
+ .copy{width:40vw}.copy h2{font-size:1.8rem}.copy p{font-size:1rem}
+}
+</style>
+</head>
+<body>
+<div class="track" id="track">
+<div class="stage">
+<svg id="svg" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Ilustración de una célula animal con sus orgánulos">
+<defs>
+<path id="mem" d="M500 70 C720 60 910 170 925 350 C940 540 760 650 500 640 C260 635 70 540 75 340 C80 160 280 80 500 70Z"/>
+<path id="er" d="M250 500 C310 450 380 470 430 510 C480 550 540 540 585 500"/>
+</defs>
+<g id="cam"><g transform="translate(300 100)">
+<use href="#mem" fill="#2A1233"/>
+<g class="tw" fill="#F6B8D0" opacity=".5">
+<circle cx="170" cy="170" r="3.5"/><circle cx="200" cy="175" r="3.5"/><circle cx="620" cy="120" r="3.5"/><circle cx="655" cy="140" r="3.5"/><circle cx="560" cy="330" r="3.5"/><circle cx="600" cy="360" r="3.5"/><circle cx="150" cy="450" r="3.5"/><circle cx="180" cy="480" r="3.5"/><circle cx="840" cy="320" r="3.5"/><circle cx="860" cy="360" r="3.5"/><circle cx="520" cy="590" r="3.5"/><circle cx="800" cy="580" r="3.5"/>
+</g>
+<g class="vs" fill="#2A1233" stroke="#E8A9BF" stroke-width="3"><circle cx="150" cy="330" r="12"/><circle cx="800" cy="395" r="10"/><circle cx="520" cy="470" r="9"/></g>
+
+<g class="part"><!-- 0 membrana -->
+<use href="#mem" fill="none" stroke="#FF6FA0" stroke-width="13" class="flow" stroke-dasharray="0 17" stroke-linecap="round"/>
+<use href="#mem" fill="none" stroke="#FF6FA0" stroke-width="13" class="flow" stroke-dasharray="0 17" stroke-linecap="round" transform="translate(500 350) scale(.94) translate(-500 -350)"/>
+<use href="#mem" fill="none" stroke="#F3B2C6" stroke-width="4" transform="translate(500 350) scale(.97) translate(-500 -350)"/>
+</g>
+
+<g class="part"><!-- 1 núcleo -->
+<circle cx="430" cy="320" r="122" fill="#3A2A66" stroke="#A98BE8" stroke-width="7"/>
+<circle class="spin" cx="430" cy="320" r="122" fill="none" stroke="#fff" stroke-width="7" stroke-dasharray="3 24"/>
+<path d="M360 300 q30 -40 60 -10 t60 -15 M355 350 q40 30 80 0 t70 10 M390 255 q20 20 50 5 t50 20 M380 395 q40 -20 90 -5" fill="none" stroke="#CDBAF7" stroke-width="5" stroke-linecap="round" opacity=".6"/>
+<circle cx="410" cy="320" r="30" fill="#9275E0"/>
+</g>
+
+<g class="part"><!-- 2 mitocondria -->
+<g transform="translate(730 230) rotate(-18)">
+<ellipse rx="92" ry="46" fill="#0F4A47" stroke="#4FD6CC" stroke-width="6"/>
+<ellipse class="beat" rx="80" ry="34" fill="#14625E" stroke="#4FD6CC" stroke-width="3"/>
+<path d="M-50 -33 L-50 4 M-20 -35 L-20 8 M10 -35 L10 8 M40 -31 L40 4 M-35 33 L-35 -4 M-5 35 L-5 -8 M25 35 L25 -8 M55 29 L55 -4" stroke="#4FD6CC" stroke-width="4" stroke-linecap="round"/>
+</g>
+<g transform="translate(560 160) rotate(25) scale(.6)">
+<ellipse rx="92" ry="46" fill="#0F4A47" stroke="#4FD6CC" stroke-width="6"/>
+<ellipse class="beat" rx="80" ry="34" fill="#14625E" stroke="#4FD6CC" stroke-width="3"/>
+<path d="M-50 -33 L-50 4 M-20 -35 L-20 8 M10 -35 L10 8 M40 -31 L40 4 M-35 33 L-35 -4 M-5 35 L-5 -8 M25 35 L25 -8 M55 29 L55 -4" stroke="#4FD6CC" stroke-width="4" stroke-linecap="round"/>
+</g>
+</g>
+
+<g class="part"><!-- 3 retículo rugoso -->
+<g fill="none" stroke-linecap="round">
+<use href="#er" stroke="#E889B0" stroke-width="12"/><use href="#er" stroke="#E889B0" stroke-width="12" transform="translate(0 26)"/><use href="#er" stroke="#E889B0" stroke-width="12" transform="translate(0 52)"/>
+<use href="#er" stroke="#F6B8D0" stroke-width="6" class="flow2" stroke-dasharray="0 15" transform="translate(0 -9)"/><use href="#er" stroke="#F6B8D0" stroke-width="6" class="flow2" stroke-dasharray="0 15" transform="translate(0 17)"/><use href="#er" stroke="#F6B8D0" stroke-width="6" class="flow2" stroke-dasharray="0 15" transform="translate(0 43)"/>
+</g>
+</g>
+
+<g class="part"><!-- 4 Golgi -->
+<g fill="none" stroke="#E0B04A" stroke-width="13" stroke-linecap="round">
+<path d="M600 470 C640 440 720 440 760 470"/><path d="M608 496 C645 466 715 466 752 496"/><path d="M616 522 C650 494 710 494 744 522"/><path d="M626 548 C655 522 705 522 734 548"/>
+</g>
+<g class="vs" fill="#F4D98B" stroke="#E0B04A" stroke-width="3"><circle cx="790" cy="440" r="12"/><circle cx="792" cy="520" r="9"/><circle cx="770" cy="575" r="8"/><circle cx="585" cy="440" r="8"/></g>
+</g>
+
+<g class="part"><!-- 5 lisosoma -->
+<circle cx="230" cy="260" r="30" fill="#29501F" stroke="#9BE07F" stroke-width="5"/>
+<g class="vs" fill="#D3F5BF"><circle cx="220" cy="252" r="4"/><circle cx="238" cy="262" r="4"/><circle cx="224" cy="272" r="4"/><circle cx="241" cy="246" r="3"/></g>
+</g>
+<g id="flows" style="display:none"></g></g></g>
+</svg>
+<div class="scrim" id="scrim"></div>
+<div class="brand">Biología celular</div>
+<button id="mode" class="mode" type="button" aria-pressed="false" aria-label="Cambiar entre fondo negro y blanco" title="Fondo blanco"><svg viewBox="0 0 32 32" width="26" height="26" aria-hidden="true"><circle cx="16" cy="16" r="14" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="14" cy="17" r="5.5" fill="currentColor"/><ellipse cx="23" cy="9" rx="3.2" ry="1.7" transform="rotate(-30 23 9)" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="22" cy="23" r="2" fill="currentColor"/><circle cx="8" cy="8" r="1.4" fill="currentColor"/></svg></button>
+<button id="ia" class="mode iabtn" type="button" aria-pressed="false" aria-label="Modo IA: ver con animación qué hace cada parte" title="Modo IA">IA</button>
+<div class="copy intro" id="copy"><h2 id="t"></h2><p id="d"></p><p class="fact" id="f"></p></div>
+<nav id="nav" aria-label="Partes de la célula"></nav>
+<div class="bar" id="bar"></div>
+</div>
+</div>
+<footer id="creditos">
+<h2>Créditos</h2>
+<dl>
+<div class="cr" style="--i:0"><dt>Primera versión, la de fondo blanco</dt><dd>AngelDavid</dd></div>
+<div class="cr" style="--i:1"><dt>Versiones de fondo negro y modo IA</dt><dd class="cl"><svg viewBox="0 0 32 32" width="30" height="30" aria-hidden="true"><path d="M19.2 16.4L29.9 17.9M18.5 18.0L24.3 22.5M17.2 19.0L21.2 29.0M15.6 19.2L14.5 26.4M14.0 18.5L7.4 27.0M13.0 17.2L6.3 19.9M12.8 15.6L2.1 14.1M13.5 14.0L7.7 9.5M14.8 13.0L10.8 3.0M16.4 12.8L17.5 5.6M18.0 13.5L24.6 5.0M19.0 14.8L25.7 12.1" fill="none" stroke="#D97757" stroke-width="3" stroke-linecap="round"/></svg>Claude</dd></div>
+<div class="cr" style="--i:2"><dt>Maqueta</dt><dd>Carmen y Elena</dd></div>
+<div class="cr" style="--i:3"><dt>Búsqueda y recopilación de toda la información</dt><dd>Ahlyin</dd></div>
+</dl>
+</footer>
+
+<script>
+const P=[
+{n:"Membrana plasmática",c:"#FF6FA0",x:915,y:350,s:3.6,w:120,d:"Una doble capa de lípidos que envuelve la célula. Decide qué entra y qué sale: nutrientes, agua y desechos.",f:"Grosor: unos 8 nm",a:"Los puntos rosados son nutrientes que entran y llegan a la mitocondria; los lilas son desechos que salen."},
+{n:"Núcleo",c:"#A98BE8",x:430,y:320,s:2.6,w:250,d:"Guarda el ADN, las instrucciones para fabricar cada proteína. Una doble membrana con poros lo protege y controla el paso de mensajes.",f:"Diámetro: 5–10 µm",a:"Los puntos violetas son copias del ADN (ARN mensajero) que salen hacia el retículo para fabricar proteínas."},
+{n:"Mitocondria",c:"#4FD6CC",x:730,y:230,s:3.8,w:200,d:"La central de energía. Convierte nutrientes y oxígeno en ATP, el combustible de la célula. Sus pliegues internos, las crestas, aumentan la superficie de trabajo.",f:"Largo: 0,5–10 µm",a:"Los puntos amarillos son ATP, la energía que la mitocondria envía al núcleo, al Golgi y a la membrana."},
+{n:"Retículo endoplasmático rugoso",c:"#E889B0",x:420,y:525,s:2.3,w:340,d:"Una red de membranas cubierta de ribosomas. Allí se fabrican las proteínas y se pliegan antes de salir hacia su destino.",f:"Ribosomas: unos 25 nm",a:"Los puntos rosas son proteínas recién hechas que viajan en vesículas hacia el Golgi."},
+{n:"Aparato de Golgi",c:"#E0B04A",x:680,y:500,s:3.8,w:170,d:"Recibe las proteínas, las clasifica, las etiqueta y las empaqueta en vesículas que viajan al lugar donde se necesitan.",f:"Pila de 4 a 8 sacos aplanados",a:"Los puntos dorados son vesículas con proteínas empaquetadas que salen hacia la membrana para enviarse fuera de la célula."},
+{n:"Lisosoma",c:"#9BE07F",x:230,y:260,s:7,w:70,d:"Digiere desechos y piezas gastadas con enzimas. Es el sistema de reciclaje de la célula.",f:"Diámetro: 0,1–1,2 µm",a:"Los puntos claros son material que entra para ser digerido; los verdes son piezas recicladas que vuelven a la célula."}
+];
+const OV={ov:1};
+const stages=[OV];P.forEach((p,i)=>stages.push({p:i},OV));
+const N=stages.length,last=N-1;
+const $=id=>document.getElementById(id);
+const cam=$("cam"),svg=$("svg"),copy=$("copy"),scrim=$("scrim"),track=$("track"),bar=$("bar");
+const parts=[...document.querySelectorAll(".part")];
+const clamp=(v,a=0,b=1)=>Math.min(b,Math.max(a,v));
+const ss=v=>{v=clamp(v);return v*v*(3-2*v)};
+let portrait=false,pf=1,ovS=1.15,shown=-1,wasOn=false,glow=-2,light=false,ia=false,fkey="",visW=1600;
+
+function layout(){
+ const a=innerWidth/innerHeight;portrait=a<=1;
+ svg.setAttribute("preserveAspectRatio",portrait?"xMidYMid slice":"xMidYMid meet");
+ visW=portrait?900*a:1600;
+ ovS=portrait?Math.min(1.15,visW*.95/860):1.15;
+ pf=portrait?Math.min(1,visW/640):1;
+}
+function camFor(st){
+ if(st.ov)return{x:500,y:350,s:ovS,ox:800,oy:portrait?300:450};
+ const p=P[st.p];
+ return{x:p.x,y:p.y,s:portrait?Math.min(p.s,visW*.92/p.w):p.s,ox:portrait?800:1060,oy:portrait?270:450};
+}
+const content=i=>i===0?{n:"La célula",c:"#A98BE8",d:"La unidad básica de la vida. Esta es una célula animal: una fábrica diminuta donde cada parte tiene un trabajo.",f:"Desliza para explorar",a:"Modo IA: cada punto en movimiento muestra qué envía cada parte y hacia dónde.",intro:1}
+ :i===last?{n:"Todo trabaja junto",c:"#F2ECFA",d:"Del ADN a la energía, del empaquetado al reciclaje: la célula coordina todas sus partes en cada segundo.",f:"Y esto ocurre en cada célula de tu cuerpo",a:"Nutrientes, energía y proteínas viajan sin parar de una parte a otra."}
+ :stages[i].p!==undefined?P[stages[i].p]:null;
+
+function setText(i){
+ if(i===shown)return;shown=i;
+ const c=content(i);if(!c)return;
+ $("t").innerHTML=c.n.split(" ").map((w,j)=>`<span class="w" style="--i:${j}">${w}</span>`).join(" ");$("d").textContent=c.d;$("f").textContent=ia&&c.a?c.a:c.f;
+ copy.style.setProperty("--c",cc(c.c));copy.classList.toggle("intro",!!c.intro);
+ bar.style.background=cc(c.c);
+}
+function update(){
+ const max=track.offsetHeight-innerHeight;
+ const pr=clamp(scrollY/max);bar.style.width=pr*100+"%";
+ const t=pr*last,i=Math.min(Math.floor(t),last-1),f=t-i;
+ const e=ss((f-.2)/.6),A=camFor(stages[i]),B=camFor(stages[i+1]);
+ const L=(a,b)=>a+(b-a)*e;
+ const s=Math.exp(L(Math.log(A.s),Math.log(B.s)));
+ cam.setAttribute("transform",`translate(${L(A.ox,B.ox)} ${L(A.oy,B.oy)}) rotate(${(light?0:1)*(i%2?-1:1)*Math.sin(e*Math.PI)*1.8}) scale(${s}) translate(${-(L(A.x,B.x)+300)} ${-(L(A.y,B.y)+100)})`);
+ const k=Math.round(t),d=Math.abs(t-k),st=stages[k];
+ setText(k);
+ const vis=content(k)?clamp(1-(d-.1)/.2):0;
+ copy.style.opacity=vis;scrim.style.opacity=vis*.95;
+ const on=vis>.05;
+ if(on&&!wasOn){copy.classList.remove("enter");void copy.offsetWidth;copy.classList.add("enter")}
+ if(!on&&wasOn)copy.classList.remove("enter");
+ wasOn=on;
+ const act=st.p!==undefined?st.p:-1,z=act>=0?clamp(1-d/.5):0;
+ parts.forEach((g,n)=>g.style.opacity=n===act?1:1-.7*z);
+ if(act!==glow){glow=act;parts.forEach((g,n)=>g.style.filter=n===act&&!light&&!portrait?`drop-shadow(0 0 8px ${P[n].c})`:"")}
+ if(ia&&act!==fkey){fkey=act;FG.forEach((arr,n)=>arr.forEach(g=>g.style.opacity=act<0?.8:n===act?1:.1));rings.forEach((r,n)=>r.style.opacity=n===act?1:0)}
+ document.querySelectorAll("nav button").forEach((b,n)=>b.classList.toggle("on",n===act&&d<.3));
+}
+const nav=$("nav");
+P.forEach((p,n)=>{
+ const b=document.createElement("button");
+ b.style.setProperty("--k",p.c);b.title=p.n;b.setAttribute("aria-label","Ir a: "+p.n);
+ b.onclick=()=>scrollTo({top:((2*n+1)/last)*(track.offsetHeight-innerHeight),behavior:"smooth"});
+ nav.appendChild(b);
+});
+let tick=false;
+addEventListener("scroll",()=>{if(!tick){tick=true;requestAnimationFrame(()=>{update();tick=false})}},{passive:true});
+addEventListener("resize",()=>{layout();glow=-2;update()});
+parts.forEach((g,n)=>{g.style.animationDelay=-n*1.7+"s";if(n===0)g.classList.add("mem")});
+const stg=document.querySelector(".stage");
+for(let i=0;i<(innerWidth<760?14:36);i++){const d=document.createElement("i"),z=2+Math.random()*4;d.className="dust";
+ Object.assign(d.style,{left:Math.random()*100+"%",width:z+"px",height:z+"px",animationDuration:14+Math.random()*22+"s",animationDelay:-Math.random()*30+"s"});
+ d.style.setProperty("--dx",(Math.random()*120-60)+"px");stg.insertBefore(d,scrim)}
+const NS="http://www.w3.org/2000/svg",fl=$("flows");
+const FL=[
+[0,"M1010 235 C950 240 880 245 805 245","#FF9EC0",4,3.2],
+[0,"M850 405 C900 415 960 425 1012 445","#B9A6FF",3,3.2],
+[1,"M430 440 C440 470 450 490 430 518","#CDBAF7",3,2.4],
+[1,"M360 425 C350 455 335 480 318 505","#CDBAF7",3,2.6],
+[2,"M730 272 C765 340 725 400 692 445","#FFE27A",4,2.8],
+[2,"M690 215 C640 225 600 265 552 298","#FFE27A",4,3],
+[2,"M792 215 C830 215 860 240 888 262","#FFE27A",3,3],
+[3,"M470 540 C520 575 570 565 612 535","#FFB0D0",4,2.6],
+[4,"M770 500 C820 520 860 520 905 500 L1010 490","#F4D98B",5,3.4],
+[5,"M62 330 C110 318 150 295 198 270","#DCEFD0",3,3],
+[5,"M258 268 C275 242 292 226 308 205","#9BE07F",3,2.4]];
+const FG=P.map(()=>[]);
+FL.forEach(([n,d,col,k,dur])=>{
+ const g=document.createElementNS(NS,"g");
+ g.innerHTML=`<path d="${d}" fill="none" stroke="${col}" stroke-opacity=".3" stroke-width="2" stroke-dasharray="3 7"/>`+Array.from({length:k},(_,j)=>{const b=`-${(dur/k*j).toFixed(2)}s`;
+  return `<g opacity="0"><circle r="11" fill="${col}" opacity=".25"/><circle r="4.5" fill="${col}"/><animateMotion dur="${dur}s" begin="${b}" repeatCount="indefinite" path="${d}"/><animate attributeName="opacity" values="0;1;1;0" keyTimes="0;.12;.8;1" dur="${dur}s" begin="${b}" repeatCount="indefinite"/></g>`}).join("");
+ fl.appendChild(g);FG[n].push(g)});
+const rings=P.map(p=>{const g=document.createElementNS(NS,"g");
+ g.innerHTML=[0,1.2].map(b=>`<circle cx="${p.x}" cy="${p.y}" r="10" fill="none" stroke="${p.c}" stroke-width="2.5"><animate attributeName="r" from="10" to="${Math.round(340/p.s)}" dur="2.4s" begin="${b}s" repeatCount="indefinite"/><animate attributeName="opacity" from=".8" to="0" dur="2.4s" begin="${b}s" repeatCount="indefinite"/></circle>`).join("");
+ g.style.opacity=0;fl.appendChild(g);return g});
+const M={"#F2ECFA":"#2A1B4A","#A99BC8":"#5E4F80","#A98BE8":"#7B5EA7","#2A1233":"#FBE3EA","#3A2A66":"#D9CCEC","#CDBAF7":"#5B3F8F","#9275E0":"#4A3578","#F6B8D0":"#3F2B6B","#FF6FA0":"#D6527F","#E889B0":"#C26A8F","#0F4A47":"#BFE5E0","#14625E":"#E7F6F3","#4FD6CC":"#2F9C95","#29501F":"#CDE6BF","#9BE07F":"#7FB069","#D3F5BF":"#4F7A3C"};
+const cc=c=>light?(M[c.toUpperCase()]||c):c;
+const svgEls=[...svg.querySelectorAll("*")].filter(e=>e.hasAttribute("fill")||e.hasAttribute("stroke"));
+svgEls.forEach(e=>["fill","stroke"].forEach(a=>{if(e.hasAttribute(a))e.dataset["d"+a]=e.getAttribute(a)}));
+const btn=$("mode"),navBtns=[...document.querySelectorAll("nav button")];
+function applyTheme(){
+ document.documentElement.classList.toggle("light",light);
+ document.documentElement.classList.toggle("ia",ia);fl.style.display=ia?"":"none";fkey="";$("ia").setAttribute("aria-pressed",ia);
+ btn.title=light?"Fondo negro":"Fondo blanco";btn.setAttribute("aria-pressed",light);
+ svgEls.forEach(e=>["fill","stroke"].forEach(a=>{const v=e.dataset["d"+a];if(v)e.setAttribute(a,light?(M[v.toUpperCase()]||v):v)}));
+ navBtns.forEach((b,n)=>b.style.setProperty("--k",cc(P[n].c)));
+ shown=-1;glow=-2;
+}
+const save=()=>{try{localStorage.setItem("celula-tema",ia?"ia":light?"light":"dark")}catch(e){}};
+btn.onclick=()=>{if(ia)ia=false;else light=!light;save();applyTheme();update()};
+$("ia").onclick=()=>{ia=!ia;if(ia)light=false;save();applyTheme();update()};
+try{const v=localStorage.getItem("celula-tema");light=v==="light";ia=v==="ia"}catch(e){}
+applyTheme();
+const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add("in");io.unobserve(e.target)}}),{threshold:.25});
+document.querySelectorAll(".cr").forEach(el=>io.observe(el));
+layout();update();
+</script>
+</body>
+</html>
