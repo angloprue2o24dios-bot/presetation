@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" class="light">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -312,10 +312,10 @@ function applyTheme(){
  navBtns.forEach((b,n)=>b.style.setProperty("--k",cc(P[n].c)));
  shown=-1;glow=-2;
 }
-const save=()=>{try{localStorage.setItem("celula-tema",ia?"ia":light?"light":"dark")}catch(e){}};
+const save=()=>{};
 btn.onclick=()=>{if(ia)ia=false;else light=!light;save();applyTheme();update()};
 $("ia").onclick=()=>{ia=!ia;if(ia)light=false;save();applyTheme();update()};
-try{const v=localStorage.getItem("celula-tema");light=v==="light";ia=v==="ia"}catch(e){}
+light=true;ia=false;
 applyTheme();
 const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add("in");io.unobserve(e.target)}}),{threshold:.25});
 document.querySelectorAll(".cr").forEach(el=>io.observe(el));
